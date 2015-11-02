@@ -1,5 +1,5 @@
-### Test code correct but slow version
-generatePatchySpecies <- function(nb.sim = 1, nb.sp = 20)
+generatePatchySpecies <-
+function(nb.sim = 1, nb.sp = 20)
 {
   richness <- stack()
   richness.patch <- stack()

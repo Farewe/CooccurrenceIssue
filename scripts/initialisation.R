@@ -23,11 +23,11 @@ bio1 <- mask(bio1, worldmap[which(worldmap@data$SUBUNIT %in%
                                       "Mexico", "Panama", "Costa Rica", "Guatemala", 
                                       "Honduras", "Nicaragua")), ])
 
-rm(worldclim)
 
 temperature.gradient <- seq(worldclim[["bio1"]]@data@min - 100,
                             worldclim[["bio1"]]@data@max, 
                             length = 1000)
+rm(worldclim)
 
 gauss.resp <- function(x., mean., diff., prob.)
 {

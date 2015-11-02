@@ -32,23 +32,10 @@ generatePatchySpecies <- function(nb.sim = 1, nb.sp = 20)
                                   plot = FALSE)
       
       # Step 2.5: generate habitat patches
-      if(cellStats(species[[i]]$pa.raster, stat = 'max') == 1)
-      {
-        species[[i]]$patched.pa.raster <- raster(matrix(0, nc = 1, nr = 1))
-        count <- 0
-        while(cellStats(species[[i]]$patched.pa.raster, stat = 'max') != 1 | count <= 10)
-        {
-          patches <- generate.patches(bio1, n.patches = 50, patch.size = 10)
-          species[[i]]$patched.pa.raster <- overlay(species[[i]]$pa.raster,
-                                                    patches,
-                                                    fun = function(x, y){return(x * y)})
-          count <- count + 1
-        }
-      } else 
-      {
-        species[[i]]$patched.pa.raster <- species[[i]]$pa.raster
-      }
-      
+      patches <- generate.patches(bio1, n.patches = 50, patch.size = 10)
+      species[[i]]$patched.pa.raster <- overlay(species[[i]]$pa.raster,
+                                                patches,
+                                                fun = function(x, y){return(x * y)})
       
       
       # Step 3: we store ranges to calculate richness par cell

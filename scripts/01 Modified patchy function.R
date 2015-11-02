@@ -1,5 +1,5 @@
 ### Test code correct but slow version
-generatePatchySpecies <- function(nb.sim = 1, nb.sp = 20)
+generatePatchySpecies2 <- function(nb.sim = 1, nb.sp = 20)
 {
   richness <- stack()
   richness.patch <- stack()
@@ -32,25 +32,17 @@ generatePatchySpecies <- function(nb.sim = 1, nb.sp = 20)
                                   plot = FALSE)
       
       # Step 2.5: generate habitat patches
-      if(cellStats(species[[i]]$pa.raster, stat = 'max') == 1)
+      if(cellStats(species[[i]]$pa.raster, stat = 'max') == 1 & 
+         length(Which(species[[i]]$pa.raster == 1, cells = T)) > 500)
       {
-        species[[i]]$patched.pa.raster <- raster(matrix(0, nc = 1, nr = 1))
-        count <- 0
-        while(cellStats(species[[i]]$patched.pa.raster, stat = 'max') != 1 | count <= 10)
-        {
-          patches <- generate.patches(bio1, n.patches = 50, patch.size = 10)
-          species[[i]]$patched.pa.raster <- overlay(species[[i]]$pa.raster,
-                                                    patches,
-                                                    fun = function(x, y){return(x * y)})
-          count <- count + 1
-        }
+        species[[i]]$patched.pa.raster <- generate.patches(bio1, n.patches = 10, patch.size = 10, 
+                                    starts = sample(Which(species[[i]]$pa.raster == 1, cells = T), 10))
       } else 
       {
         species[[i]]$patched.pa.raster <- species[[i]]$pa.raster
+        species[[i]]$patched.pa.raster[!is.na(species[[i]]$patched.pa.raster)] <- 0 # To avoid species with less than 500 cells & range cohesion
       }
-      
-      
-      
+
       # Step 3: we store ranges to calculate richness par cell
       range.stack <- addLayer(range.stack,
                               species[[i]]$pa.raster)
