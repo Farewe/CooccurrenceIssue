@@ -1,0 +1,418 @@
+\documentclass{article}
+\title{Generation of virtual species}
+\author{Boris Leroy}
+
+<<include=FALSE>>=
+opts_chunk$set(
+  fig.path="./graphs/",
+  dev=c('png'),
+  fig.keep='high',
+  fig.show='hold',
+  fig.height=4,
+  fig.width=5.5,
+  highlight=TRUE,
+  tidy = FALSE
+)
+
+recalc <- TRUE
+@
+
+\begin{document}
+
+\maketitle
+\section{Environmental data (E-space)}
+I used worldclim data to simulate our virtual communities. I cropped it over Europe only to reduce 
+raster size and accelerate computing time, but I think it should be feasible over the entire world 
+if necessary. I selected only one variable to simulate our species: bio1 (annual mean temperature).
+
+<<echo=TRUE, results="hide", eval = recalc>>=
+library(virtualspecies)
+library(reshape2)
+library(ggplot2)
+library(rworldmap)
+source("./functions/patch_generation.R")
+
+# Downloading worldclim data
+worldclim <- getData("worldclim", var = "bio", res = 10)
+worldclim <- worldclim[["bio1"]]
+
+# Resampling to the resolution used in the paper
+worldclim <- aggregate(worldclim, fact = 3)
+
+# We will crop to North America
+worldmap<- getMap()
+northam <- extent(-180, -15, 5, 85)
+bio1 <- crop(worldclim, northam)
+bio1 <- mask(bio1, worldmap[which(worldmap@data$SUBUNIT %in% 
+    c("United States of America", "Canada", "Greenland", 
+      "Mexico", "Panama", "Costa Rica", "Guatemala", 
+      "Honduras", "Nicaragua")), ])
+
+plot(bio1)
+@
+
+However, I chose to use the entire world's temperature range rather than cropping to Europe temperature range,
+in order to avoid edge effects mentionned by Alexander:
+
+<<echo=TRUE, results="hide", eval = recalc>>=
+temperature.gradient <- seq(worldclim[["bio1"]]@data@min - 100,
+                            worldclim[["bio1"]]@data@max, 
+                            length = 1000)
+@
+
+\section{Definition of the response function for each species}
+
+We will use a gaussian response function, normalised between 0 and 1, defined by an optimum
+and a tolerance. The tolerance is here defined as the interval around the optimum containing
+99\% of the area under the curve:
+
+<<echo=TRUE, results = "hide", eval = recalc>>=
+
+gauss.resp <- function(x., mean., diff., prob.)
+{
+  custnorm(x = x., mean = mean., diff = diff., prob = prob.) /
+    custnorm(x = mean., mean = mean., diff = diff., prob = prob.)
+}
+
+@
+
+For example, if we define a species whose temperature optimum is 15°C, and tolerance is 7.5°C,
+then the curve will look like this:
+
+<<echo=TRUE, results = "hide", eval = recalc>>=
+temp.grad <- seq(0, 30, length = 100)
+response <- gauss.resp(temp.grad, mean. = 15, diff. = 7.5, prob = 0.99)
+plot(response ~ temp.grad, type = "l")
+abline(v = 15, lty = 2)
+abline(v = c(7.5, 22.5), lty = 3)
+@
+
+
+\section{Scenario 1, no temperature gradient}
+
+The first scenario consists in defining niches randomly along the temperature gradient. 
+Niches are created as gaussian responses to the temperature gradient.
+Niche optima are randomly chosen with $sample$, and standard deviations are chosen
+between 5°C and 10°C, which creates relatively wide distribution ranges.
+
+With this setup, temperature has strictly NO influence on the probability that a species has a particular optimum.
+
+The species are then generated with some stochasticity at range edges.
+<<echo = TRUE, results = "hide", eval = recalc, message = FALSE, warning=FALSE>>=
+nb.sim <- 1
+nb.sp <- 5000 # The number of species to simulate is defined here
+
+richness <- stack()
+richness.patch <- stack()
+for (j in 1:nb.sim)
+{
+  sp.traits <- data.frame(T.optimum = sample(temperature.gradient,
+                                           nb.sp, replace = T),
+                        T.tolerance = sample(seq(50, 100, 
+                                                 length = 1000), 
+                                             nb.sp, replace = T))
+  species <- list() # All the species will be stored in this list
+  range.stack <- stack() # Species ranges will be stored in this stack
+  range.patch.stack <- stack() # Species ranges with patched distributions will be stored in this stack
+  
+  for (i in 1:nb.sp)
+  {
+  # Step 1: generating the species environmental suitability
+  # (i.e., transforming from E-space to G-space)
+  species[[i]] <- generateSpFromFun(bio1,
+    list(bio1 = list(fun = "gauss.resp", 
+              args = list(mean. = sp.traits[i, "T.optimum"],
+                          diff. = sp.traits[i, "T.tolerance"],
+                          prob. = 0.99))),
+    rescale.each.response = FALSE,
+    rescale = FALSE)
+  # Step 2: converting environmental suitability to presence-absence,
+  # using the probabilistic conversion
+  species[[i]] <- convertToPA(species[[i]], # PA.method = "threshold",
+                              beta = 0.7, alpha = -0.05, 
+                              plot = FALSE)
+  
+  # Step 2.5: generate habitat patches
+  if(cellStats(species[[i]]$pa.raster, stat = 'max') == 1)
+  {
+      species[[i]]$patched.pa.raster <- raster(matrix(0, nc = 1, nr = 1))
+      count <- 0
+      while(cellStats(species[[i]]$patched.pa.raster, stat = 'max') != 1 | count <= 10)
+  {
+      patches <- generate.patches(bio1, n.patches = 50, patch.size = 10)
+      species[[i]]$patched.pa.raster <- overlay(species[[i]]$pa.raster,
+                                            patches,
+                                            fun = function(x, y){return(x * y)})
+      count <- count + 1
+  }
+  } else 
+  {
+    species[[i]]$patched.pa.raster <- species[[i]]$pa.raster
+  }
+
+
+  
+  # Step 3: we store ranges to calculate richness par cell
+  range.stack <- addLayer(range.stack,
+                          species[[i]]$pa.raster)
+  range.patch.stack <- addLayer(range.patch.stack,
+                          species[[i]]$patched.pa.raster)
+  }
+  
+  
+# Richness calculation
+richness <- addLayer(richness,
+                     sum(range.stack))
+richness.patch <- addLayer(richness.patch,
+                     sum(range.patch.stack))
+
+# Saving the files
+save(species, file = paste0("./data/S1.sim", j, ".species"))
+save(sp.traits, file = paste0("./data/S1.sim", j, ".traits"))
+writeRaster(range.stack, paste0("./data/S1.sim", j, ".rangestacks"), 
+            overwrite = T)
+writeRaster(richness, paste0("./data/S1.sim", j, ".richness"), 
+            overwrite = T)
+writeRaster(range.patch.stack, paste0("./data/S1.sim", j, ".rangestacks.patch"), 
+            overwrite = T)
+writeRaster(richness.patch, paste0("./data/S1.sim", j, ".richness.patch"), 
+            overwrite = T)
+}
+
+@
+
+This is how the richness map looks like:
+<<echo = TRUE, results = "hide", eval = recalc>>=
+plot(richness)
+@
+
+And the relationship between richness and temperature:
+<<echo = TRUE, results = "hide", eval = recalc>>=
+rich <- data.frame(getValues(richness),
+                   Temperature = getValues(bio1))
+rich <- rich[-which(is.na(rich[, 1])), ]
+rich <- melt(rich, id = 'Temperature', value.name = "Richness")
+ggplot(rich, aes(x = Temperature, y = Richness)) +
+  geom_point() + facet_wrap(~ variable)
+@
+
+\\
+We can study how this relation changes as we add species:
+\\
+
+<<echo = FALSE, results = "hide", eval = recalc, fig.height = 8>>=
+nb.steps <- 10
+increasing.species <- split(1:nb.sp, ceiling(1:nb.sp/(nb.sp/nb.steps)))
+rich.subsets <- stack()
+for(i in 1:nb.steps)
+{
+  subset.rang.stack <- range.stack[[1:max(increasing.species[[i]])]]
+  subset.richness <- sum(subset.rang.stack)
+  rich.subsets <- addLayer(rich.subsets,
+                           subset.richness)
+}
+names(rich.subsets) <- paste0("Richness.1-", 
+                              sapply(increasing.species, max))
+rich.df <- getValues(rich.subsets)
+rich.df <- data.frame(rich.df,
+                      Temperature = getValues(bio1))
+rich.df <- rich.df[-which(is.na(rich.df[, 1])), ]
+rich.df <- melt(rich.df, id = 'Temperature')
+levels(rich.df$variable) <- paste0("Subset from \n1 to ", sapply(strsplit(levels(rich.df$variable), ".", fixed = T), function(x) x[3]), " species")
+ggplot(rich.df, aes(x = Temperature, y = value)) +
+  geom_point() + facet_wrap(~ variable, ncol = 2)
+@
+
+\\
+We can also study how the richness-temperature patterns change if we take subsets of species:
+\\
+
+<<echo = F, results = "hide", eval = recalc, fig.height = 8>>=
+nb.subset.species <- 100
+rich.subsets <- stack()
+for(i in 1:10)
+{
+  subset.rang.stack <- range.stack[[sample(1:nlayers(range.stack),
+                                           nb.subset.species)]]
+  subset.richness <- sum(subset.rang.stack)
+  rich.subsets <- addLayer(rich.subsets,
+                           subset.richness)
+}
+rich.df <- getValues(rich.subsets)
+rich.df <- data.frame(rich.df,
+                      Temperature = getValues(bio1))
+rich.df <- rich.df[-which(is.na(rich.df[, 1])), ]
+rich.df <- melt(rich.df, id = 'Temperature')
+levels(rich.df$variable) <- paste0("Random subset ", 1:length(levels(rich.df$variable)))
+ggplot(rich.df, aes(x = Temperature, y = value)) +
+  geom_point() + facet_wrap(~ variable, ncol = 2)
+@
+
+
+\section{Scenario 2, temperature gradient}
+
+To create a temperature gradient, I simulated a logistic response to temperature, in order to:
+\\
+ - have few species at very low temperature
+ - have a rapid increase in the number of species at intermediate temperatures
+ - have a lot of species at high temperatures, but with a plateau
+\\
+<<echo = TRUE, results = "hide", eval = recalc>>=
+optimum.probability <- logisticFun(x = temperature.gradient,
+                                   alpha = -50, beta = 0.5)
+
+plot(optimum.probability ~ temperature.gradient, type = "l",
+     xlab = "Temperature (°C * 10)",
+     ylab = "Probability of generating a species")
+@
+
+Then we proceed with the generation of species:
+
+<<echo = TRUE, results = "hide", eval = recalc, message = FALSE, warning=FALSE>>=
+richness <- stack()
+richness.patch <- stack()
+for (j in 1:nb.sim)
+{
+  sp.traits <- data.frame(T.optimum = sample(temperature.gradient,
+                                           nb.sp, 
+                                           replace = T,
+                                           prob = optimum.probability),
+                        T.tolerance = sample(seq(50, 100,
+                                                 length = 1000), 
+                                             nb.sp, replace = T))
+  species <- list() # All the virtual pecies will be stored in this list
+  range.stack <- stack() # Species ranges will be stored in this stack
+  range.patch.stack <- stack() # Species ranges with patched distributions will be stored in this stack
+  for (i in 1:nb.sp)
+  {
+  # Step 1: generating the species environmental suitability
+  # (i.e., transforming from E-space to G-space)
+  species[[i]] <- generateSpFromFun(bio1,
+    list(bio1 = list(fun = "gauss.resp", 
+              args = list(mean. = sp.traits[i, "T.optimum"],
+                          diff. = sp.traits[i, "T.tolerance"],
+                          prob. = 0.99))),
+    rescale.each.response = FALSE,
+    rescale = FALSE)
+  # Step 2: converting environmental suitability to presence-absence,
+  # using the probabilistic conversion
+  species[[i]] <- convertToPA(species[[i]], # PA.method = "threshold",
+                              beta = 0.7, alpha = -0.05, 
+                              plot = FALSE)
+  
+    # Step 2.5: generate habitat patches
+  if(cellStats(species[[i]]$pa.raster, stat = 'max') == 1)
+  {
+      species[[i]]$patched.pa.raster <- raster(matrix(0, nc = 1, nr = 1))
+      count <- 0
+      while(cellStats(species[[i]]$patched.pa.raster, stat = 'max') != 1 | count <= 10)
+  {
+      patches <- generate.patches(bio1, n.patches = 50, patch.size = 10)
+      species[[i]]$patched.pa.raster <- overlay(species[[i]]$pa.raster,
+                                            patches,
+                                            fun = function(x, y){return(x * y)})
+      count <- count + 1
+  }
+  } else 
+  {
+    species[[i]]$patched.pa.raster <- species[[i]]$pa.raster
+  }
+
+  
+  # Step 3: we store ranges to calculate richness par cell
+  range.stack <- addLayer(range.stack,
+                          species[[i]]$pa.raster)
+  range.patch.stack <- addLayer(range.patch.stack,
+                          species[[i]]$patched.pa.raster)
+  }
+  
+  
+# Richness calculation
+richness <- addLayer(richness,
+                     sum(range.stack))
+richness.patch <- addLayer(richness.patch,
+                     sum(range.patch.stack))
+
+# Saving the files
+save(species, file = paste0("./data/S2.sim", j, ".species"))
+save(sp.traits, file = paste0("./data/S2.sim", j, ".traits"))
+writeRaster(range.stack, paste0("./data/S2.sim", j, ".rangestacks"), 
+            overwrite = T)
+writeRaster(richness, paste0("./data/S2.sim", j, ".traits"), 
+            overwrite = T)
+writeRaster(range.patch.stack, paste0("./data/S2.sim", j, ".rangestacks.patch"), 
+            overwrite = T)
+writeRaster(richness.patch, paste0("./data/S2.sim", j, ".richness.patch"), 
+            overwrite = T)
+}
+@
+
+This is how the richness map looks like:
+
+<<echo = TRUE, results = "hide", eval = recalc>>=
+plot(richness)
+@
+
+And the relationship between richness and temperature is clear:
+
+<<echo = TRUE, results = "hide", eval = recalc>>=
+rich <- data.frame(getValues(richness),
+                   Temperature = getValues(bio1))
+rich <- rich[-which(is.na(rich[, 1])), ]
+rich <- melt(rich, id = 'Temperature', value.name = "Richness")
+ggplot(rich, aes(x = Temperature, y = Richness)) +
+  geom_point() + facet_wrap(~ variable)
+@
+
+\\
+We can study how this relation changes as we add species:
+\\
+
+<<echo = F, results = "hide", eval = recalc, fig.height = 8>>=
+nb.steps <- 10
+increasing.species <- split(1:nb.sp, ceiling(1:nb.sp/(nb.sp/nb.steps)))
+rich.subsets <- stack()
+for(i in 1:nb.steps)
+{
+  subset.rang.stack <- range.stack[[1:max(increasing.species[[i]])]]
+  subset.richness <- sum(subset.rang.stack)
+  rich.subsets <- addLayer(rich.subsets,
+                           subset.richness)
+}
+names(rich.subsets) <- paste0("Richness.1-", 
+                              sapply(increasing.species, max))
+rich.df <- data.frame(getValues(rich.subsets),
+                      Temperature = getValues(bio1))
+rich.df <- rich.df[-which(is.na(rich.df[, 1])), ]
+rich.df <- melt(rich.df, id = 'Temperature')
+levels(rich.df$variable) <- paste0("Subset from \n1 to ", sapply(strsplit(levels(rich.df$variable), ".", fixed = T), function(x) x[3]), " species")
+ggplot(rich.df, aes(x = Temperature, y = value)) +
+  geom_point() + facet_wrap(~ variable, ncol = 2)
+@
+
+\\
+We can also study how the richness-temperature patterns change if we take subsets of species:
+\\
+
+<<echo = F, results = "hide", eval = recalc, fig.height = 8>>=
+nb.subset.species <- 100
+rich.subsets <- stack()
+for(i in 1:10)
+{
+  subset.rang.stack <- range.stack[[sample(1:nlayers(range.stack), 
+                                           nb.subset.species)]]
+  subset.richness <- sum(subset.rang.stack)
+  rich.subsets <- addLayer(rich.subsets,
+                           subset.richness)
+}
+rich.df <- getValues(rich.subsets)
+rich.df <- data.frame(rich.df,
+                      Temperature = getValues(bio1))
+rich.df <- rich.df[-which(is.na(rich.df[, 1])), ]
+rich.df <- melt(rich.df, id = 'Temperature')
+levels(rich.df$variable) <- paste0("Random subset ", 1:length(levels(rich.df$variable)))
+ggplot(rich.df, aes(x = Temperature, y = value)) +
+  geom_point() + facet_wrap(~ variable, ncol = 2)
+@
+
+\end{document}
