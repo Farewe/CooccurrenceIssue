@@ -1,5 +1,5 @@
 library(aprof)
-number.of.species <- 100
+number.of.species <- 1000
 
 #### INITIAL STATE ####
 # source("./scripts/initialisation.R")
@@ -119,6 +119,23 @@ dev.off()
 profileplot(sum.aprof06)
 summary(sum.aprof06)
 
+#### TEST 6 ####
+source("./scripts/initialisation.R")
+source("./scripts/functions/patch_generation_version4.1.R")
+source("./scripts/07 Parallel generation based on 06.R")
+dump("generatePatchySpecies", file = "./scripts/07.R")
+source("./scripts/07.R")
+Rprof(file = "./profiling/07.out", interval = .02, line.profiling = TRUE)
+generatePatchySpecies(nb.sim = 1, nb.sp = number.of.species)
+Rprof(append = FALSE)
+# summaryRprof("./profiling/07.out")
+sum.aprof07 <- aprof("./scripts/07.R", "./profiling/07.out")
+pdf("./profiling/07.pdf")
+plot(sum.aprof07)
+dev.off()
+profileplot(sum.aprof07)
+summary(sum.aprof07)
+
 summary(sum.aprof00) #42.94
 summary(sum.aprof01) #76.54 (but misleading)
 summary(sum.aprof02) #115.76
@@ -126,3 +143,4 @@ summary(sum.aprof03) #135.86
 summary(sum.aprof04) #135.34
 summary(sum.aprof05) #105.96
 summary(sum.aprof06) #105.8
+summary(sum.aprof07) #40.2
