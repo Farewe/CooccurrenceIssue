@@ -1,5 +1,5 @@
 library(aprof)
-number.of.species <- 1000
+number.of.species <- 5000
 
 #### INITIAL STATE ####
 # source("./scripts/initialisation.R")
@@ -120,13 +120,18 @@ profileplot(sum.aprof06)
 summary(sum.aprof06)
 
 #### TEST 6 ####
+library(foreach)
 source("./scripts/initialisation.R")
 source("./scripts/functions/patch_generation_version4.1.R")
+source("./scripts/functions/growDistribution.R")
+source("./scripts/functions/resamp.R")
 source("./scripts/07 Parallel generation based on 06.R")
 dump("generatePatchySpecies", file = "./scripts/07.R")
 source("./scripts/07.R")
+library(doParallel)
+registerDoParallel(cores=8)
 Rprof(file = "./profiling/07.out", interval = .02, line.profiling = TRUE)
-generatePatchySpecies(nb.sim = 1, nb.sp = number.of.species)
+generatePatchySpecies(nb.sim = 2, nb.sp = number.of.species)
 Rprof(append = FALSE)
 # summaryRprof("./profiling/07.out")
 sum.aprof07 <- aprof("./scripts/07.R", "./profiling/07.out")

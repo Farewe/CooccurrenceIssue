@@ -3,3 +3,5 @@
 .RData
 wc10/
 data/
+profiling/
+graphs/
