@@ -10,4 +10,4 @@ source("./scripts/Species generation function.R")
 
 
 registerDoParallel(cores=12)
-generateAllSpecies(nb.sim = 10, nb.sp = 5000)
+generateAllSpecies(nb.sim = 50, nb.sp = 5000, nb.patches = 150)

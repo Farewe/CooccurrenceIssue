@@ -1,5 +1,5 @@
 ### Correct generation method, scenario 1 (even temperature gradient)
-generateAllSpecies <- function(nb.sim = 1, nb.sp = 20)
+generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
 {
   library(virtualspecies)
   richness.stack <- stack()
@@ -18,7 +18,8 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20)
     species <- foreach(i = 1:nb.sp, 
                        .packages = "virtualspecies",
                        .export = c("bio1", "generate.patches",
-                                   "expand", "growDistribution")) %dopar% 
+                                   "expand", "growDistribution",
+                                   "resamp", "nb.patches")) %dopar% 
     {
       sup <- custnorm(x = sp.traits[i, "T.optimum"],
                       mean = sp.traits[i, "T.optimum"],
@@ -40,7 +41,7 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20)
       
       # Step 2.5: generate habitat patches
       # 2.5.1 Uncohesive
-      patches <- generate.patches(bio1, n.patches = 50, patch.size = 10)
+      patches <- generate.patches(bio1, n.patches = nb.patches, patch.size = 10)
       cur.sp$patched.pa.raster <- overlay(cur.sp$pa.raster,
                                           patches,
                                           fun = function(x, y) x * y)
@@ -154,7 +155,7 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20)
     richness.stack <- addLayer(richness.stack, richness)
     richness.patch.stack <- addLayer(richness.patch.stack, richness.patch)
     richness.cohesive.stack <- addLayer(richness.cohesive.stack, richness.cohesive)
-    
+    message(Sys.time(), " - Simulation ", j, " (", round(100 * j / nb.sim, 2), "%) complete\n")
   }
-  message(Sys.time(), " - Simulation", i, "(", round(100 * i / nb.sim, 2), "%) complete")
+  
 }
