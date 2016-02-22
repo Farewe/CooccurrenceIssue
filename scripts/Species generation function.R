@@ -1,11 +1,14 @@
 ### Correct generation method, scenario 1 (even temperature gradient)
+
 generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50, scenario = "neutral",
-                               temperature.gradient)
+                               temperature.gradient, patchsize = 10)
+
 {
   library(virtualspecies)
   richness.stack <- stack()
   richness.patch.stack <- stack()
   richness.cohesive.stack <- stack()
+
   if(scenario == "neutral")
   {
     probi <- NULL
@@ -14,13 +17,15 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50, scenario
     probi <- logisticFun(x = temperature.gradient,
                          alpha = -50, beta = 0.5)
   }
-  for (j in 1:nb.sim)
+
+  for (j in simulation)
   {
     
     sp.traits <- data.frame(T.optimum = sample(temperature.gradient,
+
                                                nb.sp, replace = T,
                                                prob = probi),
-                            T.tolerance = sample(seq(50, 100, 
+                            T.tolerance = sample(seq(50, 450, 
                                                      length = 1000), 
                                                  nb.sp, replace = T))
     save(sp.traits, file = paste0("./outputs/", scenario, "_sim", j, "_traits"))
@@ -52,7 +57,7 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50, scenario
       
       # Step 2.5: generate habitat patches
       # 2.5.1 Uncohesive
-      patches <- generate.patches(bio1, n.patches = nb.patches, patch.size = 10)
+      patches <- generate.patches(bio1, n.patches = nb.patches, patch.size = patchsize)
       cur.sp$patched.pa.raster <- overlay(cur.sp$pa.raster,
                                           patches,
                                           fun = function(x, y) x * y)
@@ -166,7 +171,7 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50, scenario
     richness.stack <- addLayer(richness.stack, richness)
     richness.patch.stack <- addLayer(richness.patch.stack, richness.patch)
     richness.cohesive.stack <- addLayer(richness.cohesive.stack, richness.cohesive)
-    message(Sys.time(), " - Simulation ", j, " (", round(100 * j / nb.sim, 2), "%) complete\n")
+    message(Sys.time(), " - Simulation ", j, "complete\n")
   }
   
 }
