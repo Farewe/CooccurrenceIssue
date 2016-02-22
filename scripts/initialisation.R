@@ -24,8 +24,8 @@ bio1 <- mask(bio1, worldmap[which(worldmap@data$SUBUNIT %in%
                                       "Honduras", "Nicaragua")), ])
 
 
-temperature.gradient <- seq(worldclim[["bio1"]]@data@min - 100,
-                            worldclim[["bio1"]]@data@max, 
+temperature.gradient <- seq(worldclim[["bio1"]]@data@min - 225,
+                            worldclim[["bio1"]]@data@max + 225, 
                             length = 1000)
 rm(worldclim)
 

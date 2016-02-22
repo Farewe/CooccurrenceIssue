@@ -9,6 +9,9 @@ generate.patches <- function(environment.raster, n.patches = 50, patch.size = 10
   env.m <- getValues(dummy.raster, format = "matrix")
   env.m[!is.na(env.m)] <- 1
   
+  if(patch.size > 1)
+  {
+    
   # Select the number of patches
   # n.patches <- 50
   # Define the starting points for each patch
@@ -33,6 +36,11 @@ generate.patches <- function(environment.raster, n.patches = 50, patch.size = 10
   # Attribute all patch values in the environment matrix (NA = sea, 0 = no patch, 1 = patch)
   env.m[!(is.na(env.m))] <- 0
   env.m[ids] <- 1
+  } else if(patch.size == 1)
+  {
+    env.m[!(is.na(env.m))] <- 0
+    env.m[sample(x = which(!is.na(env.m)), size = n.patches, replace = FALSE)] <- 1
+  } else stop("Why did you choose a weird patch.size value?")
   
   patch.raster <- setValues(dummy.raster,
                             env.m)
