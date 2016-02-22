@@ -10,4 +10,8 @@ source("./scripts/Species generation function.R")
 
 
 registerDoParallel(cores=12)
-generateAllSpecies(nb.sim = 50, nb.sp = 5000, nb.patches = 150)
+generateAllSpecies(nb.sim = 100, nb.sp = 5000, nb.patches = 150, scenario = "neutral",
+                   temperature.gradient = temperature.gradient)
+generateAllSpecies(nb.sim = 100, nb.sp = 5000, nb.patches = 150, scenario = "temp.gradient",
+                   temperature.gradient = temperature.gradient)
+

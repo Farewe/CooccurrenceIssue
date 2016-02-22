@@ -1,18 +1,29 @@
 ### Correct generation method, scenario 1 (even temperature gradient)
-generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
+generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50, scenario = "neutral",
+                               temperature.gradient)
 {
   library(virtualspecies)
   richness.stack <- stack()
   richness.patch.stack <- stack()
   richness.cohesive.stack <- stack()
+  if(scenario == "neutral")
+  {
+    probi <- NULL
+  } else if(scenario == "temp.gradient")
+  {
+    probi <- logisticFun(x = temperature.gradient,
+                         alpha = -50, beta = 0.5)
+  }
   for (j in 1:nb.sim)
   {
+    
     sp.traits <- data.frame(T.optimum = sample(temperature.gradient,
-                                               nb.sp, replace = T),
+                                               nb.sp, replace = T,
+                                               prob = probi),
                             T.tolerance = sample(seq(50, 100, 
                                                      length = 1000), 
                                                  nb.sp, replace = T))
-    save(sp.traits, file = paste0("./data/S1_sim", j, "_traits"))
+    save(sp.traits, file = paste0("./outputs/", scenario, "_sim", j, "_traits"))
     
     
     species <- foreach(i = 1:nb.sp, 
@@ -62,12 +73,12 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
     # Creating range size stack
     range.stack <- stack(sapply(species, FUN = function(x) return(x$pa.raster)))
     # Writing range size stack
-    writeRaster(range.stack, paste0("./data/S1_sim", j, "_rangestacks"), 
+    writeRaster(range.stack, paste0("./outputs/", scenario, "_sim", j, "_rangestacks"), 
                 overwrite = T)
     # Calculating richness
     richness <- sum(range.stack)
     # Writing richness
-    writeRaster(richness, paste0("./data/S1_sim", j, "_richness"), 
+    writeRaster(richness, paste0("./outputs/", scenario, "_sim", j, "_richness"), 
                 overwrite = T)
     # Creating species - site matrix
     species.sites.matrix <- getValues(range.stack)
@@ -75,18 +86,18 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
     species.sites.matrix <- species.sites.matrix[-which(is.na(species.sites.matrix[, 1])), ]
     # Writing species - site matrix
     save(species.sites.matrix, 
-         file = paste0("./data/S1_sim", j, "_sp_site_matrix"), compress = "gzip")
+         file = paste0("./outputs/", scenario, "_sim", j, "_sp_site_matrix"), compress = "gzip")
     rm(species.sites.matrix)
     
     # Creating patched range size stack
     range.patch.stack <- stack(sapply(species, FUN = function(x) return(x$patched.pa.raster)))
     # Writing range size stack
-    writeRaster(range.patch.stack, paste0("./data/S1_sim", j, "_rangestacks_patch"), 
+    writeRaster(range.patch.stack, paste0("./outputs/", scenario, "_sim", j, "_rangestacks_patch"), 
                 overwrite = T)
     # Calculating richness
     richness.patch <- sum(range.patch.stack)
     # Writing richness
-    writeRaster(richness.patch, paste0("./data/S1_sim", j, "_richness_patch"), 
+    writeRaster(richness.patch, paste0("./outputs/", scenario, "_sim", j, "_richness_patch"), 
                 overwrite = T)
     # Creating species - site matrix
     speciespatch.sites.matrix <- getValues(range.patch.stack)
@@ -94,18 +105,18 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
     speciespatch.sites.matrix <- speciespatch.sites.matrix[-which(is.na(speciespatch.sites.matrix[, 1])), ]
     # Writing species - site matrix
     save(speciespatch.sites.matrix, 
-         file = paste0("./data/S1_sim", j, "_sp_patch_site_matrix"), compress = "gzip")
+         file = paste0("./outputs/", scenario, "_sim", j, "_sp_patch_site_matrix"), compress = "gzip")
     rm(speciespatch.sites.matrix) 
 
     # Creating cohesive range size stack 
     range.cohesive.stack <- stack(sapply(species, FUN = function(x) return(x$cohesive.pa.raster)))
     # Writing range size stack
-    writeRaster(range.cohesive.stack, paste0("./data/S1_sim", j, "_rangestacks_cohesive"), 
+    writeRaster(range.cohesive.stack, paste0("./outputs/", scenario, "_sim", j, "_rangestacks_cohesive"), 
                 overwrite = T)
     # Calculating richness
     richness.cohesive <- sum(range.cohesive.stack)
     # Writing richness
-    writeRaster(richness.cohesive, paste0("./data/S1_sim", j, "_richness_cohesive"), 
+    writeRaster(richness.cohesive, paste0("./outputs/", scenario, "_sim", j, "_richness_cohesive"), 
                 overwrite = T)
     # Creating species - site matrix
     speciescohesive.sites.matrix <- getValues(range.cohesive.stack)
@@ -113,10 +124,10 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
     speciescohesive.sites.matrix <- speciescohesive.sites.matrix[-which(is.na(speciescohesive.sites.matrix[, 1])), ]
     # Writing species - site matrix
     save(speciescohesive.sites.matrix, 
-         file = paste0("./data/S1_sim", j, "_sp_cohesive_site_matrix"), compress = "gzip")
+         file = paste0("./outputs/", scenario, "_sim", j, "_sp_cohesive_site_matrix"), compress = "gzip")
     rm(speciescohesive.sites.matrix)
     
-    png(paste0("./graphs/maps_rich_S1_sim", j, ".png"))
+    png(paste0("./outputs/", scenario, "_sim", j, "_richnessmap.png"))
     tmp <- stack(richness,
                  richness.patch,
                  richness.cohesive)
@@ -131,7 +142,7 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
                        Temperature = getValues(bio1))
     rich <- rich[-which(is.na(rich[, 1])), ]
     # rich <- melt(rich, id = 'Temperature', value.name = "Richness")
-    png(paste0("./graphs/rich_temp_S1_sim", j, ".png"))
+    png(paste0("./outputs/", scenario, "_sim", j, "_rich_temp.png"))
     
     par(mfrow = c(1, 3))
 
@@ -148,7 +159,7 @@ generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50)
     
     
     # Saving the files
-    save(species, file = paste0("./data/S1_sim", j, "_species"), compress = "gzip")
+    save(species, file = paste0("./outputs/", scenario, "_sim", j, "_species"), compress = "gzip")
     
     
     rm(list = c("rich", "species", "sp.traits"))
