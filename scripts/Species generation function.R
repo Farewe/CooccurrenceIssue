@@ -1,7 +1,7 @@
 ### Correct generation method, scenario 1 (even temperature gradient)
 
 generateAllSpecies <- function(nb.sim = 1, nb.sp = 20, nb.patches = 50, scenario = "neutral",
-                               temperature.gradient, patchsize = 10)
+                               temperature.gradient, patchsize = 10, simulation = 1)
 
 {
   library(virtualspecies)
