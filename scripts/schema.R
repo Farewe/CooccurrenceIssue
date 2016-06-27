@@ -10,7 +10,7 @@ dev.off()
 
 
 png("./graphs/schema/s02.png", h = 600, w = 840)
-par(mar = c(4.1, 6.1, 4.1, 2.1))
+par(mar = c(4.1, 6.6, 4.1, 2.1))
 plot(1, 1, type = "n", xlab = "Temperature", ylab = "", yaxt = "n",
      ylim = c(0, 1), bty = "n", las = 1,
      xlim = c(min(temperature.gradient), max(temperature.gradient)))
@@ -19,44 +19,46 @@ abline(v = c(bio1@data@min, bio1@data@max), lty = 2)
 arrows(x0 = bio1@data@min, x1 = bio1@data@max,
        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
        length = 0.12, xpd = NA)
-text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.05 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
+text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
 
 dev.off()
 
 
-png("./graphs/schema/s03.png", h = 600, w = 840)
-par(mar = c(4.1, 6.1, 4.1, 2.1))
+png("./graphs/schema/s03.png", h = 600, w = 870)
+par(mar = c(4.1, 7.6, 4.1, 2.1))
 temp <- temperature.gradient * 10
 plot((logisticFun(x = temp,
                         alpha = -50, beta = 0.5) / sum(logisticFun(x = temp,
                                                                    alpha = -50, beta = 0.5))
            ~ temperature.gradient), 
      type = "l", xlab = "Optimum temperature",
-     bty = "l", las = 1,
+     bty = "l", lwd = 2,
      xlim = c(min(temperature.gradient), max(temperature.gradient)),
-     ylab = "Sampling probability\n")
+     ylab = "Sampling probability\n", cex.lab = 2, cex.axis = 2)
 
 axis(1, at = c(-100, 100))
-abline(v = c(bio1@data@min, bio1@data@max), lty = 2)
+abline(v = c(bio1@data@min, bio1@data@max), lty = 2, lwd = 2)
 arrows(x0 = bio1@data@min, x1 = bio1@data@max,
        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
-       length = 0.12, xpd = NA)
-text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.05 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
+       length = 0.12, xpd = NA, lwd = 2)
+text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), 
+     "North America\ntemperature range", xpd = NA, cex = 2)
 dev.off()
 
 png("./graphs/schema/s04.png", h = 600, w = 840)
-par(mar = c(4.1, 6.1, 4.1, 2.1))
+par(mar = c(4.1, 6.6, 4.1, 2.1))
 plot(rep(1 / length(temperature.gradient), length(temperature.gradient)) ~ temperature.gradient,
      type = "l", xlab = "Optimum temperature", ylim = c(0, 1 / length(temperature.gradient) + 0.2 * 1 / length(temperature.gradient)),
-     bty = "l", las = 1,
+     bty = "l", lwd = 2, cex.lab = 2, cex.axis = 2,
      xlim = c(min(temperature.gradient), max(temperature.gradient)),
      ylab = "Probability of sampling\n")
 axis(1, at = c(-100, 100))
-abline(v = c(bio1@data@min, bio1@data@max), lty = 2)
+abline(v = c(bio1@data@min, bio1@data@max), lty = 2, lwd = 2,)
 arrows(x0 = bio1@data@min, x1 = bio1@data@max,
        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
-       length = 0.12, xpd = NA)
-text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.05 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
+       length = 0.12, xpd = NA, lwd = 2)
+text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]),
+     "North America\ntemperature range", xpd = NA, cex = 2)
 dev.off()
 
 # probi <- logisticFun(x = temp,
@@ -69,7 +71,7 @@ dev.off()
 # 
 # 
 # png("./graphs/schema/s05.png", h = 600, w = 840)
-# par(mar = c(4.1, 6.1, 4.1, 2.1))
+# par(mar = c(4.1, 6.6, 4.1, 2.1))
 # plot(gauss.resp(x. = temperature.gradient, mean. = sp.traits[1, 1],
 #                 diff. = sp.traits[1, 2], prob. = .99) ~ temperature.gradient, 
 #      type = "l", lty = 1, col = brewer.pal(3, "Dark2")[1],
@@ -86,7 +88,7 @@ dev.off()
 # arrows(x0 = bio1@data@min, x1 = bio1@data@max,
 #        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
 #        length = 0.12, xpd = NA)
-# text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.05 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
+# text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
 # dev.off()
 # 
 # 
@@ -97,7 +99,7 @@ dev.off()
 # 
 # 
 # png("./graphs/schema/s06.png", h = 600, w = 840)
-# par(mar = c(4.1, 6.1, 4.1, 2.1))
+# par(mar = c(4.1, 6.6, 4.1, 2.1))
 # plot(gauss.resp(x. = temperature.gradient, mean. = sp.traits[1, 1],
 #                 diff. = sp.traits[1, 2], prob. = .99) ~ temperature.gradient, 
 #      type = "l", lty = 1, col = brewer.pal(3, "Dark2")[1],
@@ -114,7 +116,7 @@ dev.off()
 # arrows(x0 = bio1@data@min, x1 = bio1@data@max,
 #        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
 #        length = 0.12, xpd = NA)
-# text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.05 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
+# text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
 # dev.off()
 
 
