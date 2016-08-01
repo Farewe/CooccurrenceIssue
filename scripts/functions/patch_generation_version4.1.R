@@ -1,3 +1,5 @@
+# I used code from http://gis.stackexchange.com/a/60599/27173 to write this function
+
 generate.patches <- function(environment.raster, n.patches = 50, patch.size = 10)
 {
   dummy.raster <- environment.raster
