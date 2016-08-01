@@ -12,7 +12,7 @@ The important scripts in this repository are:
 
 * [`Species generation script.R`](scripts/Species generation script.R): scripts used to run the simulations
 * [`initialisation.R`](scripts/initialisation.R): contains the initialisation steps (e.g. downloading data from WorldClim)
-* [`patch_generation_version4.R`](scripts/patch_generation_version4.R): function used to generate uncohesive distribution ranges
-* [`growDistribution.R`](scripts/growDistribution.R): function used to generate cohesive distribution ranges
+* [`patch_generation_version4.1.R`](scripts/functions/patch_generation_version4.1.R): function used to generate uncohesive distribution ranges
+* [`growDistribution.R`](scripts/functions/growDistribution.R): function used to generate cohesive distribution ranges
 * [`Species generation function.R`](scripts/Species generation function.R): function to generate a full simulation for a given number of species, a given temperature-richness scenario, and other parameters 
 
