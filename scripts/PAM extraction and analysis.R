@@ -2,7 +2,7 @@
 
 birdrfsd <- read.table("./data/bird range szi.txt", h = T)
 
-simulation <- c("100patches", "250patches", "500patches", "1000patches", "2500patches", "5000patches")
+simulation <- c("250patches", "500patches", "1000patches", "2500patches", "5000patches")
 pdf('./graphs/RSFD.pdf')
 for (s in simulation)
 {
@@ -21,18 +21,6 @@ for (s in simulation)
   }
 }
 dev.off()
-# dir(path ="./outputs")[grep("46", dir(path ="./outputs"))]
-# 
-# library(raster)
-# 
-# a <- raster("./outputs/neutral_sim46_richness")
-# b <- t(getValues(a, format = "matrix"))
-# b <- b[!is.na(b)]
-# 
-# cellCoords <- data.frame(cell.number = which(!is.na(b)),
-#                          xyFromCell(a, which(!is.na(b))))
-# 
-# write.csv(cellCoords, file = "./data/coordinates.csv")
 
 dir("C:/Users/BorisMNHN/Google Drive/recherche/publis/Co-occurrence problem/example data")
 
@@ -136,14 +124,3 @@ for (s in simulation)
 
 write.table(results, "./data/meanrangesize.txt", sep = "\t")
 
-
-#### cooccurrences ####
-library(EcoSimR)
-library(bipartite)
-uncohesive <- speciespatch.sites.matrix
-cohesive <- speciescohesive.sites.matrix
-uncohesive <- uncohesive[, -which(colSums(uncohesive) == 0)]
-# uncohesive <- t(uncohesive)
-
-C.score(uncohesive) # 0.98
-C.score(cohesive) # 0.47

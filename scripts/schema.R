@@ -1,5 +1,7 @@
 source("./scripts/initialisation.R")
 
+cf <- 2
+
 bio1 <- bio1 / 10
 temperature.gradient <- temperature.gradient / 10
 bio1 <- setMinMax(bio1)
@@ -49,75 +51,74 @@ png("./graphs/schema/s04.png", h = 600, w = 840)
 par(mar = c(4.1, 6.6, 4.1, 2.1))
 plot(rep(1 / length(temperature.gradient), length(temperature.gradient)) ~ temperature.gradient,
      type = "l", xlab = "Optimum temperature", ylim = c(0, 1 / length(temperature.gradient) + 0.2 * 1 / length(temperature.gradient)),
-     bty = "l", lwd = 2, cex.lab = 2, cex.axis = 2,
+     bty = "l", lwd = cf, cex.lab = cf, cex.axis = cf,
      xlim = c(min(temperature.gradient), max(temperature.gradient)),
      ylab = "Probability of sampling\n")
 axis(1, at = c(-100, 100))
-abline(v = c(bio1@data@min, bio1@data@max), lty = 2, lwd = 2,)
+abline(v = c(bio1@data@min, bio1@data@max), lty = 2, lwd = cf)
 arrows(x0 = bio1@data@min, x1 = bio1@data@max,
        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
-       length = 0.12, xpd = NA, lwd = 2)
+       length = 0.12, xpd = NA, lwd = cf)
 text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]),
+     "North America\ntemperature range", xpd = NA, cex = cf)
+dev.off()
+
+probi <- logisticFun(x = temp,
+                     alpha = -50, beta = 0.5)
+sp.traits <- data.frame(T.optimum = c(20, 40, 5),
+                        T.tolerance =  c(10, 20, 30))
+library(RColorBrewer)
+
+
+png("./graphs/schema/s05.png", h = 600, w = 840)
+par(mar = c(4.1, 6.6, 4.1, 2.1))
+plot(gauss.resp(x. = temperature.gradient, mean. = sp.traits[1, 1],
+                diff. = sp.traits[1, 2], prob. = .99) ~ temperature.gradient,
+     type = "l", lty = 1, col = brewer.pal(3, "Dark2")[1],
+     bty = "l", xlab = "Temperature", ylab = "Probability of occurrence",
+     lwd = cf, cex.lab = cf, cex.axis = cf)
+lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[2, 1],
+                 diff. = sp.traits[2, 2], prob. = .99) ~ temperature.gradient,
+      col = brewer.pal(3, "Dark2")[2], lwd = cf)
+lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[3, 1],
+                 diff. = sp.traits[3, 2], prob. = .99) ~ temperature.gradient,
+      col = brewer.pal(3, "Dark2")[3], lwd = cf)
+axis(1, at = c(-100, 100))
+abline(v = c(bio1@data@min, bio1@data@max), lty = 2, lwd = cf)
+arrows(x0 = bio1@data@min, x1 = bio1@data@max,
+       y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
+       length = 0.12, xpd = NA, lwd = cf)
+text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), 
      "North America\ntemperature range", xpd = NA, cex = 2)
 dev.off()
 
-# probi <- logisticFun(x = temp,
-#                      alpha = -50, beta = 0.5)
-# sp.traits <- data.frame(T.optimum = sample(temperature.gradient,
-#                                            3, replace = T,
-#                                            prob = probi),
-#                         T.tolerance =  c(10, 20, 30))
-# library(RColorBrewer)
-# 
-# 
-# png("./graphs/schema/s05.png", h = 600, w = 840)
-# par(mar = c(4.1, 6.6, 4.1, 2.1))
-# plot(gauss.resp(x. = temperature.gradient, mean. = sp.traits[1, 1],
-#                 diff. = sp.traits[1, 2], prob. = .99) ~ temperature.gradient, 
-#      type = "l", lty = 1, col = brewer.pal(3, "Dark2")[1],
-#      bty = "l", xlab = "Temperature", ylab = "Probability of occurrence",
-#      las = 1)
-# lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[2, 1],
-#                  diff. = sp.traits[2, 2], prob. = .99) ~ temperature.gradient,
-#       col = brewer.pal(3, "Dark2")[2])
-# lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[3, 1],
-#                  diff. = sp.traits[3, 2], prob. = .99) ~ temperature.gradient,
-#       col = brewer.pal(3, "Dark2")[3])
-# axis(1, at = c(-100, 100))
-# abline(v = c(bio1@data@min, bio1@data@max), lty = 2)
-# arrows(x0 = bio1@data@min, x1 = bio1@data@max,
-#        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
-#        length = 0.12, xpd = NA)
-# text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
-# dev.off()
-# 
-# 
-# sp.traits <- data.frame(T.optimum = sample(temperature.gradient,
-#                                            3, replace = T),
-#                         T.tolerance = c(10, 20, 30))
-# library(RColorBrewer)
-# 
-# 
-# png("./graphs/schema/s06.png", h = 600, w = 840)
-# par(mar = c(4.1, 6.6, 4.1, 2.1))
-# plot(gauss.resp(x. = temperature.gradient, mean. = sp.traits[1, 1],
-#                 diff. = sp.traits[1, 2], prob. = .99) ~ temperature.gradient, 
-#      type = "l", lty = 1, col = brewer.pal(3, "Dark2")[1],
-#      bty = "l", xlab = "Temperature", ylab = "Probability of occurrence",
-#      las = 1)
-# lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[2, 1],
-#                  diff. = sp.traits[2, 2], prob. = .99) ~ temperature.gradient,
-#       col = brewer.pal(3, "Dark2")[2])
-# lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[3, 1],
-#                  diff. = sp.traits[3, 2], prob. = .99) ~ temperature.gradient,
-#       col = brewer.pal(3, "Dark2")[3])
-# axis(1, at = c(-100, 100))
-# abline(v = c(bio1@data@min, bio1@data@max), lty = 2)
-# arrows(x0 = bio1@data@min, x1 = bio1@data@max,
-#        y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
-#        length = 0.12, xpd = NA)
-# text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), "North America\ntemperature range", xpd = NA)
-# dev.off()
+
+sp.traits <- data.frame(T.optimum = c(-19, -5, 25),
+                        T.tolerance = c(10, 20, 30))
+library(RColorBrewer)
+
+
+png("./graphs/schema/s06.png", h = 600, w = 840)
+par(mar = c(4.1, 6.6, 4.1, 2.1))
+plot(gauss.resp(x. = temperature.gradient, mean. = sp.traits[1, 1],
+                diff. = sp.traits[1, 2], prob. = .99) ~ temperature.gradient,
+     type = "l", lty = 1, col = brewer.pal(3, "Dark2")[1],
+     bty = "l", xlab = "Temperature", ylab = "Probability of occurrence",
+     lwd = cf, cex.lab = cf, cex.axis = cf)
+lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[2, 1],
+                 diff. = sp.traits[2, 2], prob. = .99) ~ temperature.gradient,
+      col = brewer.pal(3, "Dark2")[2], lwd = cf)
+lines(gauss.resp(x. = temperature.gradient, mean. = sp.traits[3, 1],
+                 diff. = sp.traits[3, 2], prob. = .99) ~ temperature.gradient,
+      col = brewer.pal(3, "Dark2")[3], lwd = cf)
+axis(1, at = c(-100, 100))
+abline(v = c(bio1@data@min, bio1@data@max), lty = 2, lwd = cf)
+arrows(x0 = bio1@data@min, x1 = bio1@data@max,
+       y0 = par()$usr[4], y1 = par()$usr[4], angle = 20, code = 3,
+       length = 0.12, xpd = NA, lwd = cf)
+text(x = (bio1@data@min + bio1@data@max) / 2, y = par()$usr[4] + 0.06 * diff(par()$usr[3:4]), 
+     "North America\ntemperature range", xpd = NA, cex = cf)
+dev.off()
 
 
 library(virtualspecies)
